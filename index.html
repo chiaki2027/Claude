@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>七夕まつり 〜願いを夜空へ〜</title>
+<meta name="theme-color" content="#04060f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎋</text></svg>">
+<style>
+  :root{
+    --gold:#ffd98a;
+    --ink:#f3ecd9;
+    --panel:rgba(10,16,38,.72);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;}
+  body{
+    background:#05070f;
+    font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","BIZ UDMincho",serif;
+    color:var(--ink);
+    touch-action:manipulation;
+    user-select:none;
+  }
+  #sky{position:fixed;inset:0;display:block;}
+  #scene{position:fixed;inset:0;width:100%;height:100%;}
+  #vignette{
+    position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 42%,transparent 55%,rgba(2,4,12,.55) 100%);
+  }
+
+  /* ---------- タイトル ---------- */
+  #title{
+    position:fixed;top:max(14px,env(safe-area-inset-top));left:0;right:0;
+    text-align:center;pointer-events:none;z-index:5;
+    text-shadow:0 0 18px rgba(120,150,255,.45),0 1px 3px rgba(0,0,0,.6);
+  }
+  #title h1{font-size:clamp(19px,4.6vw,30px);font-weight:600;letter-spacing:.35em;text-indent:.35em;}
+  #title p{font-size:clamp(10px,2.6vw,13px);letter-spacing:.5em;text-indent:.5em;opacity:.75;margin-top:6px;}
+  #count{
+    position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:5;
+    font-size:12px;letter-spacing:.12em;opacity:.8;pointer-events:none;
+    text-shadow:0 1px 3px rgba(0,0,0,.7);
+  }
+
+  /* ---------- 入力パネル ---------- */
+  #panel{
+    position:fixed;left:50%;bottom:0;transform:translateX(-50%);
+    width:min(480px,100%);z-index:10;
+    background:var(--panel);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(255,255,255,.14);border-bottom:none;
+    border-radius:22px 22px 0 0;
+    padding:18px 20px calc(16px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 40px rgba(0,0,0,.5);
+    transition:transform .45s cubic-bezier(.22,.9,.3,1),opacity .45s;
+  }
+  #panel.hidden{transform:translateX(-50%) translateY(110%);opacity:0;pointer-events:none;}
+  #panel h2{
+    font-size:14px;letter-spacing:.3em;text-indent:.3em;text-align:center;
+    margin-bottom:14px;opacity:.9;
+  }
+  #swatches{display:flex;justify-content:center;gap:14px;margin-bottom:14px;}
+  .swatch{
+    width:38px;height:38px;border-radius:50%;cursor:pointer;border:none;
+    position:relative;transition:transform .2s;
+    box-shadow:inset 0 -4px 8px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.4);
+  }
+  .swatch:active{transform:scale(.92);}
+  .swatch.sel{transform:scale(1.12);}
+  .swatch.sel::after{
+    content:"";position:absolute;inset:-6px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.85);
+    box-shadow:0 0 10px rgba(255,255,255,.5);
+  }
+  #wishForm{display:flex;gap:10px;}
+  #wishInput{
+    flex:1;min-width:0;
+    background:rgba(255,255,255,.09);
+    border:1px solid rgba(255,255,255,.22);border-radius:12px;
+    padding:12px 14px;font-size:16px;color:var(--ink);
+    font-family:inherit;letter-spacing:.06em;outline:none;
+    user-select:text;-webkit-user-select:text;
+  }
+  #wishInput::placeholder{color:rgba(243,236,217,.4);}
+  #wishInput:focus{border-color:rgba(255,217,138,.65);box-shadow:0 0 12px rgba(255,217,138,.25);}
+  #hangBtn{
+    flex-shrink:0;border:none;cursor:pointer;border-radius:12px;
+    padding:0 18px;font-family:inherit;font-size:14px;letter-spacing:.1em;
+    color:#241b06;font-weight:700;
+    background:linear-gradient(160deg,#ffe9ae,#f5b942);
+    box-shadow:0 3px 12px rgba(245,185,66,.35);
+    transition:transform .15s,box-shadow .2s;
+  }
+  #hangBtn:active{transform:scale(.95);}
+  #hangBtn:disabled{opacity:.45;cursor:default;}
+  #panel .hint{font-size:11px;opacity:.55;text-align:center;margin-top:10px;letter-spacing:.15em;}
+
+  /* ---------- フローティングボタン ---------- */
+  #fabs{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(20px + env(safe-area-inset-bottom));
+    display:flex;gap:14px;z-index:9;
+    transition:opacity .4s,transform .4s;
+  }
+  #fabs.hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(24px);}
+  .fab{
+    border:1px solid rgba(255,255,255,.2);cursor:pointer;
+    border-radius:999px;padding:13px 24px;
+    font-family:inherit;font-size:15px;letter-spacing:.14em;color:var(--ink);
+    white-space:nowrap;
+    background:var(--panel);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    box-shadow:0 4px 20px rgba(0,0,0,.45);
+    transition:transform .15s,box-shadow .3s;
+  }
+  .fab:active{transform:scale(.94);}
+  #prayBtn{
+    border-color:rgba(255,217,138,.55);color:#ffe9b8;
+    box-shadow:0 0 18px rgba(255,200,90,.28),0 4px 20px rgba(0,0,0,.45);
+  }
+  #prayBtn:disabled{opacity:.4;box-shadow:none;cursor:default;}
+
+  /* ---------- 祈りメッセージ ---------- */
+  #prayMsg{
+    position:fixed;left:0;right:0;top:34%;text-align:center;z-index:12;
+    font-size:clamp(16px,4.2vw,24px);letter-spacing:.4em;text-indent:.4em;
+    color:#fff6dc;pointer-events:none;opacity:0;
+    text-shadow:0 0 22px rgba(255,220,140,.8),0 0 60px rgba(255,220,140,.4);
+    transition:opacity 1.2s ease;
+    white-space:pre-line;line-height:2.1;
+  }
+  #prayMsg.show{opacity:1;}
+
+  /* ---------- 短冊モーダル ---------- */
+  #modal{
+    position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    background:rgba(3,5,14,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    opacity:0;pointer-events:none;transition:opacity .3s;
+  }
+  #modal.show{opacity:1;pointer-events:auto;}
+  #modalCard{
+    background:var(--panel);border:1px solid rgba(255,255,255,.18);
+    border-radius:18px;padding:26px 28px;width:min(320px,86vw);
+    box-shadow:0 10px 50px rgba(0,0,0,.6);text-align:center;
+  }
+  #modalChip{width:26px;height:40px;border-radius:5px;margin:0 auto 14px;
+    box-shadow:inset 0 -4px 8px rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.35);}
+  #modalText{font-size:17px;letter-spacing:.12em;line-height:1.9;margin-bottom:20px;word-break:break-all;}
+  #modal .row{display:flex;gap:10px;justify-content:center;}
+  #modal button{
+    border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);
+    color:var(--ink);border-radius:10px;padding:9px 20px;cursor:pointer;
+    font-family:inherit;font-size:13px;letter-spacing:.1em;
+  }
+  #modal button.danger{border-color:rgba(255,120,120,.4);color:#ffb3b3;}
+
+  /* ---------- 短冊のきらめき ---------- */
+  @keyframes tzGlow{
+    0%{filter:drop-shadow(0 0 0 rgba(255,225,150,0));}
+    25%{filter:drop-shadow(0 0 10px rgba(255,228,160,.95));}
+    60%{filter:drop-shadow(0 0 7px rgba(255,228,160,.7));}
+    100%{filter:drop-shadow(0 0 0 rgba(255,225,150,0));}
+  }
+  .praying{animation:tzGlow 3.2s ease-in-out;}
+  @keyframes shineSweep{
+    0%{opacity:0;}20%{opacity:.9;}55%{opacity:.35;}100%{opacity:0;}
+  }
+  .praying .shine{animation:shineSweep 3.2s ease-in-out;}
+  .shine{opacity:0;}
+
+  .tanzaku{cursor:pointer;pointer-events:auto;}
+  #scene{pointer-events:none;}
+
+  @keyframes dropIn{
+    0%{opacity:0;transform:translateY(-26px);}
+    60%{opacity:1;transform:translateY(4px);}
+    100%{opacity:1;transform:translateY(0);}
+  }
+  .dropIn{animation:dropIn .9s cubic-bezier(.34,1.4,.5,1);}
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<svg id="scene" xmlns="http://www.w3.org/2000/svg"></svg>
+<div id="vignette"></div>
+
+<div id="title">
+  <h1>七夕まつり</h1>
+  <p>願いを夜空へ</p>
+</div>
+<div id="count"></div>
+
+<div id="panel">
+  <h2>短冊に願いを</h2>
+  <div id="swatches"></div>
+  <form id="wishForm">
+    <input id="wishInput" type="text" maxlength="16" placeholder="願い事を書いてね（16文字まで）" autocomplete="off">
+    <button id="hangBtn" type="submit">飾る</button>
+  </form>
+  <p class="hint">色を選んで、願い事を笹に飾りましょう</p>
+</div>
+
+<div id="fabs" class="hidden">
+  <button class="fab" id="newBtn">＋ 新しい短冊</button>
+  <button class="fab" id="prayBtn">祈る 🙏</button>
+</div>
+
+<div id="prayMsg"></div>
+
+<div id="modal">
+  <div id="modalCard">
+    <div id="modalChip"></div>
+    <div id="modalText"></div>
+    <div class="row">
+      <button id="modalClose">閉じる</button>
+      <button id="modalRemove" class="danger">外す</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 設定 ================= */
+const COLORS = {
+  green : {a:'#a5f2d0', b:'#3cb488', ink:'#14402c', name:'緑'},
+  red   : {a:'#ffc9d6', b:'#ff7fa0', ink:'#5e1f33', name:'赤'},
+  yellow: {a:'#ffedb0', b:'#ffc852', ink:'#5c4416', name:'黄'},
+  white : {a:'#ffffff', b:'#d7e2f6', ink:'#39425a', name:'白'},
+  purple: {a:'#e0c8ff', b:'#a878f0', ink:'#3b2564', name:'紫'},
+};
+const STORE_KEY = 'tanabata-wishes-v1';
+const MAX_WISHES = 40;
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/* ================= ユーティリティ ================= */
+const $ = s => document.querySelector(s);
+const rand = (a,b) => a + Math.random()*(b-a);
+const el = (name, attrs, parent) => {
+  const n = document.createElementNS(SVGNS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+};
+
+/* ================= 夜空 (Canvas) ================= */
+class Sky {
+  constructor(canvas){
+    this.cv = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.stars = [];       // またたく星
+    this.wishStars = [];   // 願いの星（祈りで増える）
+    this.particles = [];   // 祈りの光の粒
+    this.fireflies = [];
+    this.shooting = null;
+    this.nextShoot = rand(4,9);
+    this.sprites = {};
+    this.resize();
+  }
+
+  resize(){
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    this.w = window.innerWidth; this.h = window.innerHeight;
+    this.cv.width = this.w*dpr; this.cv.height = this.h*dpr;
+    this.cv.style.width = this.w+'px'; this.cv.style.height = this.h+'px';
+    this.ctx.setTransform(dpr,0,0,dpr,0,0);
+    this.buildStatic();
+    this.buildStars();
+    this.buildFireflies();
+  }
+
+  /* 光の粒スプライト（放射グラデ）をキャッシュ */
+  sprite(color){
+    if (this.sprites[color]) return this.sprites[color];
+    const s = document.createElement('canvas');
+    s.width = s.height = 32;
+    const c = s.getContext('2d');
+    const g = c.createRadialGradient(16,16,0,16,16,16);
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(.25,color);
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(0,0,32,32);
+    this.sprites[color] = s;
+    return s;
+  }
+
+  buildStatic(){
+    const w=this.w, h=this.h;
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    const cv = document.createElement('canvas');
+    cv.width=w*dpr; cv.height=h*dpr;
+    const c = cv.getContext('2d');
+    c.scale(dpr,dpr);
+
+    // 空のグラデーション
+    const g = c.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,'#04060f');
+    g.addColorStop(.42,'#0a1434');
+    g.addColorStop(.72,'#16265a');
+    g.addColorStop(.92,'#23366b');
+    g.addColorStop(1,'#2a3d72');
+    c.fillStyle=g; c.fillRect(0,0,w,h);
+
+    // 天の川（斜めの淡い帯）
+    c.save();
+    c.translate(w*.5, h*.34);
+    c.rotate(-.42);
+    const band = c.createLinearGradient(0,-h*.22,0,h*.22);
+    band.addColorStop(0,'rgba(120,150,230,0)');
+    band.addColorStop(.35,'rgba(150,175,240,.075)');
+    band.addColorStop(.5,'rgba(205,215,255,.13)');
+    band.addColorStop(.65,'rgba(150,175,240,.075)');
+    band.addColorStop(1,'rgba(120,150,230,0)');
+    c.fillStyle=band;
+    c.fillRect(-w, -h*.22, w*2, h*.44);
+    // 帯の中の微細な星
+    for(let i=0;i<650;i++){
+      const x = rand(-w,w);
+      const y = (rand(-1,1)+rand(-1,1)+rand(-1,1))/3 * h*.17; // ガウス近似
+      const a = rand(.03,.3)*(1-Math.abs(y)/(h*.18));
+      if(a<=0) continue;
+      c.fillStyle=`rgba(${220+rand(-30,20)|0},${222+rand(-25,20)|0},255,${a})`;
+      const r = rand(.3,1.1);
+      c.beginPath(); c.arc(x,y,r,0,7); c.fill();
+    }
+    c.restore();
+
+    // 静かな遠景の星
+    for(let i=0;i<260;i++){
+      const x=rand(0,w), y=rand(0,h*.85);
+      c.fillStyle=`rgba(235,240,255,${rand(.05,.35)})`;
+      c.beginPath(); c.arc(x,y,rand(.3,.9),0,7); c.fill();
+    }
+
+    // 月（三日月）
+    const mx=w*.82, my=h*.15, mr=Math.min(w,h)*.05;
+    const glow=c.createRadialGradient(mx,my,0,mx,my,mr*7);
+    glow.addColorStop(0,'rgba(255,244,205,.32)');
+    glow.addColorStop(.4,'rgba(255,244,205,.1)');
+    glow.addColorStop(1,'rgba(255,244,205,0)');
+    c.fillStyle=glow; c.beginPath(); c.arc(mx,my,mr*7,0,7); c.fill();
+    const mc=document.createElement('canvas');
+    mc.width=mc.height=mr*2.4;
+    const m=mc.getContext('2d');
+    m.fillStyle='#fdf3cd';
+    m.beginPath(); m.arc(mr*1.2,mr*1.2,mr,0,7); m.fill();
+    m.globalCompositeOperation='destination-out';
+    m.beginPath(); m.arc(mr*1.2 - mr*.5, mr*1.2 - mr*.28, mr*.92,0,7); m.fill();
+    c.drawImage(mc, mx-mr*1.2, my-mr*1.2);
+
+    // 遠い山なみ（2層）
+    const ridge=(base,amp,col,seed)=>{
+      c.fillStyle=col;
+      c.beginPath();
+      c.moveTo(0,h);
+      let y=base;
+      for(let x=0;x<=w;x+=8){
+        y = base + Math.sin(x*.011+seed)*amp + Math.sin(x*.037+seed*2.7)*amp*.4;
+        c.lineTo(x,y);
+      }
+      c.lineTo(w,h); c.closePath(); c.fill();
+    };
+    ridge(h*.85, h*.045, '#0a1128', 1.7);
+    ridge(h*.905, h*.032, '#070c1d', 4.2);
+
+    // 山ぎわの街あかり
+    for(let i=0;i<Math.max(24,w/28);i++){
+      const x=rand(0,w), y=rand(h*.9,h*.985);
+      const warm=Math.random()<.8;
+      c.fillStyle=warm?`rgba(255,205,130,${rand(.25,.8)})`:`rgba(170,210,255,${rand(.2,.6)})`;
+      const s=rand(.7,1.7);
+      c.fillRect(x,y,s,s);
+    }
+    this.bg = cv;
+  }
+
+  buildStars(){
+    this.stars = [];
+    const n = Math.min(220, this.w*this.h/6000);
+    for(let i=0;i<n;i++){
+      this.stars.push({
+        x:rand(0,this.w), y:rand(0,this.h*.8),
+        r:rand(.4,1.6),
+        base:rand(.25,.6), amp:rand(.15,.4),
+        sp:rand(.4,1.8), ph:rand(0,7),
+        col:Math.random()<.12?'255,225,180':(Math.random()<.5?'200,215,255':'240,244,255'),
+      });
+    }
+  }
+
+  buildFireflies(){
+    this.fireflies=[];
+    for(let i=0;i<5;i++){
+      this.fireflies.push({
+        x:rand(0,this.w), y:rand(this.h*.78,this.h*.95),
+        ph:rand(0,7), sp:rand(.15,.4), drift:rand(6,20),
+      });
+    }
+  }
+
+  addWishStar(color){
+    this.wishStars.push({
+      x:rand(this.w*.08,this.w*.92),
+      y:rand(this.h*.06,this.h*.42),
+      r:rand(1.2,2.1),
+      sp:rand(.7,1.6), ph:rand(0,7),
+      color, born:performance.now()/1000,
+    });
+  }
+
+  spawnPrayerBurst(x,y,color,count=26){
+    for(let i=0;i<count;i++){
+      const ang=rand(0,Math.PI*2), spd=rand(8,46);
+      this.particles.push({
+        x:x+rand(-14,14), y:y+rand(-40,40),
+        vx:Math.cos(ang)*spd*.6,
+        vy:Math.sin(ang)*spd*.2 - rand(18,60),
+        drift:rand(18,70)*(Math.random()<.5?-1:1),
+        driftSp:rand(.5,1.7), driftPh:rand(0,7),
+        life:0, ttl:rand(4,7),
+        size:rand(4,11),
+        color: Math.random()<.5 ? color : (Math.random()<.6?'rgba(255,224,150,1)':'rgba(255,255,255,1)'),
+        cross:Math.random()<.25,
+      });
+    }
+  }
+
+  update(dt,t){
+    // 光の粒
+    const ps=this.particles;
+    for(let i=ps.length-1;i>=0;i--){
+      const p=ps[i];
+      p.life+=dt;
+      if(p.life>p.ttl){ ps.splice(i,1); continue; }
+      p.vy-=dt*22;              // ゆっくり浮かび上がる
+      p.vy*= (1-dt*.4);
+      p.vx*= (1-dt*.35);
+      p.x += (p.vx + Math.sin(t*p.driftSp+p.driftPh)*p.drift*.4)*dt;
+      p.y += p.vy*dt;
+    }
+    // 流れ星
+    this.nextShoot-=dt;
+    if(this.nextShoot<=0 && !this.shooting){
+      const fromLeft=Math.random()<.5;
+      this.shooting={
+        x:rand(this.w*.15,this.w*.85), y:rand(this.h*.05,this.h*.3),
+        vx:(fromLeft?1:-1)*rand(380,560), vy:rand(120,210),
+        life:0, ttl:rand(.7,1.1),
+      };
+      this.nextShoot=rand(6,15);
+    }
+    if(this.shooting){
+      const s=this.shooting;
+      s.life+=dt; s.x+=s.vx*dt; s.y+=s.vy*dt;
+      if(s.life>s.ttl) this.shooting=null;
+    }
+  }
+
+  draw(t){
+    const c=this.ctx;
+    c.clearRect(0,0,this.w,this.h);
+    c.drawImage(this.bg,0,0,this.w,this.h);
+
+    // またたく星
+    for(const s of this.stars){
+      const a=s.base + s.amp*Math.sin(t*s.sp+s.ph);
+      if(a<=.02) continue;
+      c.fillStyle=`rgba(${s.col},${a})`;
+      c.beginPath(); c.arc(s.x,s.y,s.r,0,7); c.fill();
+    }
+
+    // 願いの星（金色・十字のきらめき）
+    for(const s of this.wishStars){
+      const tw=.55+.45*Math.sin(t*s.sp+s.ph);
+      const fade=Math.min(1,(t-s.born)/2);
+      const a=tw*fade;
+      c.fillStyle=`rgba(255,228,150,${a})`;
+      c.beginPath(); c.arc(s.x,s.y,s.r,0,7); c.fill();
+      c.strokeStyle=`rgba(255,236,180,${a*.7})`;
+      c.lineWidth=.8;
+      const L=s.r*(2.6+1.4*tw);
+      c.beginPath();
+      c.moveTo(s.x-L,s.y); c.lineTo(s.x+L,s.y);
+      c.moveTo(s.x,s.y-L); c.lineTo(s.x,s.y+L);
+      c.stroke();
+    }
+
+    // 流れ星
+    if(this.shooting){
+      const s=this.shooting;
+      const a=Math.sin(Math.PI*Math.min(1,s.life/s.ttl));
+      const len=90;
+      const nx=s.vx, ny=s.vy, n=Math.hypot(nx,ny);
+      const tx=s.x-nx/n*len, ty=s.y-ny/n*len;
+      const g=c.createLinearGradient(s.x,s.y,tx,ty);
+      g.addColorStop(0,`rgba(255,255,255,${a*.95})`);
+      g.addColorStop(1,'rgba(255,255,255,0)');
+      c.strokeStyle=g; c.lineWidth=1.6;
+      c.beginPath(); c.moveTo(s.x,s.y); c.lineTo(tx,ty); c.stroke();
+    }
+
+    // ほたる
+    for(const f of this.fireflies){
+      const a=.25+.55*Math.max(0,Math.sin(t*f.sp+f.ph));
+      const x=f.x+Math.sin(t*.3+f.ph)*f.drift;
+      const y=f.y+Math.cos(t*.23+f.ph*2)*f.drift*.5;
+      c.fillStyle=`rgba(210,255,170,${a})`;
+      c.beginPath(); c.arc(x,y,1.4,0,7); c.fill();
+    }
+
+    // 祈りの光の粒
+    c.globalCompositeOperation='lighter';
+    for(const p of this.particles){
+      const prog=p.life/p.ttl;
+      const tw=.6+.4*Math.sin(t*6+p.driftPh*3);
+      const a=Math.sin(Math.PI*Math.min(1,prog))*tw;
+      const sz=p.size*(1-prog*.4);
+      c.globalAlpha=a;
+      c.drawImage(this.sprite(p.color), p.x-sz, p.y-sz, sz*2, sz*2);
+      if(p.cross && a>.3){
+        c.strokeStyle=`rgba(255,250,230,${a*.8})`;
+        c.lineWidth=.7;
+        const L=sz*1.8;
+        c.beginPath();
+        c.moveTo(p.x-L,p.y); c.lineTo(p.x+L,p.y);
+        c.moveTo(p.x,p.y-L); c.lineTo(p.x,p.y+L);
+        c.stroke();
+      }
+    }
+    c.globalAlpha=1;
+    c.globalCompositeOperation='source-over';
+  }
+}
+
+/* ================= 笹 (SVG) ================= */
+const scene = $('#scene');
+let sceneW=1000, sceneH=700;
+let swayItems=[];   // {g, cx, cy, amp, sp, ph, kind}
+let anchors=[];     // {branchG, x, y}  短冊を掛けられる場所
+let tanzakuNodes=new Map(); // id -> {g, wrap, wish}
+
+function leafPath(len){
+  const w=len*.24;
+  return `M0,0 Q${len*.35},${-w} ${len},${-w*.25} Q${len*.4},${w*.7} 0,0 Z`;
+}
+
+function makeLeafCluster(parent,x,y,baseAng,scale=1){
+  const g=el('g',{},parent);
+  const n=4+Math.floor(rand(0,3));
+  const cols=['#2c6a45','#357a51','#224f36','#3f8a5c'];
+  for(let i=0;i<n;i++){
+    const ang=baseAng + rand(-65,65) + (i-(n-1)/2)*22;
+    const len=rand(15,27)*scale;
+    el('path',{
+      d:leafPath(len),
+      fill:cols[Math.floor(rand(0,cols.length))],
+      opacity:rand(.75,1),
+      transform:`translate(${x} ${y}) rotate(${ang})`,
+    },g);
+  }
+  swayItems.push({g, cx:x, cy:y, amp:rand(2,4.5), sp:rand(1.2,2.2), ph:rand(0,7), kind:'leaf'});
+  return g;
+}
+
+function makeBamboo(baseX, topY, lean){
+  const culmG=el('g',{},scene);
+  const baseY=sceneH+10;
+  const H=baseY-topY;
+
+  // 稈（かん）：ゆるいカーブのテーパー形状
+  const pts=[];
+  const N=9;
+  for(let i=0;i<=N;i++){
+    const t=i/N;
+    const x=baseX + lean*t*t*46 + Math.sin(t*2.6)*7;
+    const y=baseY - H*t;
+    const w=(11-7.5*t)*(sceneW>760?1:.85);
+    pts.push({x,y,w});
+  }
+  let dL='M', dR='';
+  for(const p of pts) dL+=`${p.x-p.w},${p.y} `;
+  for(let i=pts.length-1;i>=0;i--) dR+=`L${pts[i].x+pts[i].w},${pts[i].y} `;
+  const grad='url(#culmGrad)';
+  el('path',{d:dL+dR+'Z', fill:grad},culmG);
+  // 節
+  for(let i=1;i<N;i++){
+    const p=pts[i];
+    el('line',{x1:p.x-p.w,y1:p.y,x2:p.x+p.w,y2:p.y,stroke:'#1c3f2b',
+      'stroke-width':2,opacity:.8},culmG);
+    el('line',{x1:p.x-p.w,y1:p.y-2,x2:p.x+p.w,y2:p.y-2,stroke:'#4c9a68',
+      'stroke-width':1,opacity:.45},culmG);
+  }
+
+  // 枝＋葉
+  let side=Math.random()<.5?1:-1;
+  for(let i=2;i<N;i++){
+    const p=pts[i];
+    const nb=i>=N-2?2:1;                    // 上部は枝が増える
+    for(let b=0;b<nb;b++){
+      const s=side*(b===0?1:-1);
+      const len=rand(60,115)*(1-(i/N)*.25);
+      const rise=rand(18,52);
+      const tipX=p.x+s*len, tipY=p.y-rise;
+      const branchG=el('g',{},culmG);
+      el('path',{
+        d:`M${p.x},${p.y} Q${p.x+s*len*.45},${p.y-rise*.9} ${tipX},${tipY}`,
+        fill:'none',stroke:'#2a5c3f','stroke-width':2.2,'stroke-linecap':'round',
+      },branchG);
+      // 葉：中間と先端
+      makeLeafCluster(branchG, p.x+s*len*.5, p.y-rise*.62, s>0?-25:205, .85);
+      makeLeafCluster(branchG, tipX, tipY, s>0?-15:195, 1);
+      if(Math.random()<.6) makeLeafCluster(branchG, p.x+s*len*.78, p.y-rise*.8, s>0?15:165, .7);
+
+      swayItems.push({g:branchG, cx:p.x, cy:p.y, amp:rand(1.6,3.2), sp:rand(.7,1.3), ph:rand(0,7), kind:'branch'});
+      // 短冊アンカー（画面内に収まる位置の枝先だけ）
+      if(tipY>90 && tipY<sceneH*.72 && tipX>40 && tipX<sceneW-40){
+        anchors.push({branchG, x:tipX, y:tipY+3});
+      }
+    }
+    side*=-1;
+  }
+  // 稈の頂の葉
+  const top=pts[N];
+  makeLeafCluster(culmG, top.x, top.y, -60, 1.1);
+  makeLeafCluster(culmG, top.x, top.y+8, 240, 1.1);
+
+  swayItems.push({g:culmG, cx:baseX, cy:baseY, amp:rand(.7,1.2), sp:rand(.3,.5), ph:rand(0,7), kind:'culm'});
+}
+
+function buildScene(){
+  scene.innerHTML='';
+  swayItems=[]; anchors=[]; tanzakuNodes.clear();
+  const aspect=window.innerWidth/window.innerHeight;
+  sceneH=700;
+  sceneW=Math.max(400,Math.min(1500,700*aspect));
+  scene.setAttribute('viewBox',`0 0 ${sceneW} ${sceneH}`);
+  scene.setAttribute('preserveAspectRatio','xMidYMax meet');
+
+  // グラデーション定義
+  const defs=el('defs',{},scene);
+  const cg=el('linearGradient',{id:'culmGrad',x1:0,y1:0,x2:1,y2:0},defs);
+  el('stop',{offset:'0','stop-color':'#1e4630'},cg);
+  el('stop',{offset:'.45','stop-color':'#38774f'},cg);
+  el('stop',{offset:'.75','stop-color':'#2b5d40'},cg);
+  el('stop',{offset:'1','stop-color':'#16351f'},cg);
+  for(const key in COLORS){
+    const c=COLORS[key];
+    const g=el('linearGradient',{id:'tz-'+key,x1:0,y1:0,x2:0,y2:1},defs);
+    el('stop',{offset:'0','stop-color':c.a},g);
+    el('stop',{offset:'1','stop-color':c.b},g);
+  }
+  const sh=el('linearGradient',{id:'shineGrad',x1:0,y1:0,x2:1,y2:1},defs);
+  el('stop',{offset:'0','stop-color':'rgba(255,255,255,0)'},sh);
+  el('stop',{offset:'.5','stop-color':'rgba(255,255,240,.85)'},sh);
+  el('stop',{offset:'1','stop-color':'rgba(255,255,255,0)'},sh);
+
+  // 竹を配置
+  const narrow=sceneW<560;
+  const positions=narrow
+    ? [[.26,90,-1],[.74,140,1]]
+    : [[.18,120,-1],[.5,70,rand(-1,1)],[.82,140,1]];
+  for(const [fx,topY,ln] of positions){
+    makeBamboo(sceneW*fx, topY+rand(-20,20), ln);
+  }
+}
+
+/* ================= 短冊 ================= */
+function makeTanzakuSVG(wish){
+  const c=COLORS[wish.color]||COLORS.red;
+  const g=el('g',{class:'tanzaku'});
+  const drop=el('g',{},g);              // 登場アニメ用（CSS transform と属性 transform の競合を避ける）
+  const wrap=el('g',{},drop);           // 振り子回転用
+  // 紐
+  el('path',{d:'M0,0 Q3,9 0,18',fill:'none',stroke:'#e9dfc0','stroke-width':1.2,opacity:.9},wrap);
+  // 短冊本体
+  const W=44,H=118,Y=18;
+  el('rect',{x:-W/2,y:Y,width:W,height:H,rx:3,
+    fill:`url(#tz-${wish.color})`,
+    stroke:'rgba(255,255,255,.5)','stroke-width':.6,
+  },wrap);
+  // 紐穴
+  el('circle',{cx:0,cy:Y+8,r:2.6,fill:'rgba(0,0,0,.22)'},wrap);
+  el('circle',{cx:0,cy:Y+8,r:1.4,fill:'#0b1020'},wrap);
+  // きらめき用オーバーレイ
+  el('rect',{x:-W/2,y:Y,width:W,height:H,rx:3,fill:'url(#shineGrad)',class:'shine'},wrap);
+
+  // 縦書きテキスト（8文字で折返し・右列から）
+  const chars=[...(wish.text||'')];
+  const perCol=8;
+  const cols=[];
+  for(let i=0;i<chars.length;i+=perCol) cols.push(chars.slice(i,i+perCol));
+  const colX = cols.length===1 ? [0] : [10,-10];
+  const fs = 12;
+  cols.slice(0,2).forEach((col,ci)=>{
+    col.forEach((ch,ri)=>{
+      const t=el('text',{
+        x:colX[ci], y:Y+25+ri*12.8,
+        'text-anchor':'middle',
+        'font-size':fs,
+        fill:c.ink,
+        'font-family':'"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif',
+      },wrap);
+      t.textContent=ch;
+    });
+  });
+  return {g,drop,wrap};
+}
+
+function hangTanzaku(wish, animate){
+  if(!anchors.length) return;
+  const anchor=anchors[wish.anchor % anchors.length];
+  const {g,drop,wrap}=makeTanzakuSVG(wish);
+  g.setAttribute('transform',`translate(${anchor.x+wish.off} ${anchor.y})`);
+  if(animate) drop.classList.add('dropIn');
+  anchor.branchG.appendChild(g);
+  g.addEventListener('click',e=>{e.stopPropagation();openModal(wish.id);});
+  swayItems.push({g:wrap,cx:0,cy:0,amp:rand(2.5,4.5),sp:rand(.9,1.5),ph:rand(0,7),kind:'tanzaku'});
+  tanzakuNodes.set(wish.id,{g,wrap,wish});
+}
+
+/* ================= 状態管理 ================= */
+let wishes=[];
+function load(){
+  try{ wishes=JSON.parse(localStorage.getItem(STORE_KEY))||[]; }
+  catch(e){ wishes=[]; }
+  if(!Array.isArray(wishes)) wishes=[];
+}
+function save(){ localStorage.setItem(STORE_KEY,JSON.stringify(wishes)); }
+function updateCount(){
+  $('#count').textContent = wishes.length ? `短冊 ${wishes.length}枚` : '';
+  $('#prayBtn').disabled = wishes.length===0;
+}
+
+/* ================= UI ================= */
+let selColor='red';
+const swatches=$('#swatches');
+for(const key in COLORS){
+  const c=COLORS[key];
+  const b=document.createElement('button');
+  b.type='button';
+  b.className='swatch'+(key===selColor?' sel':'');
+  b.style.background=`linear-gradient(160deg,${c.a},${c.b})`;
+  b.setAttribute('aria-label',c.name+'の短冊');
+  b.addEventListener('click',()=>{
+    selColor=key;
+    swatches.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
+    b.classList.add('sel');
+  });
+  swatches.appendChild(b);
+}
+
+const panel=$('#panel'), fabs=$('#fabs'), input=$('#wishInput');
+
+function showPanel(){ panel.classList.remove('hidden'); fabs.classList.add('hidden'); }
+function showFabs(){ panel.classList.add('hidden'); fabs.classList.remove('hidden'); }
+
+$('#wishForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const text=input.value.trim();
+  if(!text) { input.focus(); return; }
+  if(wishes.length>=MAX_WISHES){
+    alert('笹がいっぱいです。少し外してから飾ってね。');
+    return;
+  }
+  const usedAnchors=new Set(wishes.map(w=>w.anchor%anchors.length));
+  let anchor=-1;
+  const free=[...anchors.keys()].filter(i=>!usedAnchors.has(i));
+  anchor = free.length ? free[Math.floor(rand(0,free.length))] : Math.floor(rand(0,anchors.length));
+  const wish={
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    text, color:selColor, anchor,
+    off: free.length?0:rand(-12,12),
+  };
+  wishes.push(wish); save();
+  hangTanzaku(wish,true);
+  updateCount();
+  input.value='';
+  input.blur();
+  showFabs();
+});
+
+$('#newBtn').addEventListener('click',()=>{ showPanel(); });
+
+/* ---------- モーダル ---------- */
+const modal=$('#modal');
+let modalWishId=null;
+function openModal(id){
+  const node=tanzakuNodes.get(id);
+  if(!node) return;
+  modalWishId=id;
+  const c=COLORS[node.wish.color]||COLORS.red;
+  $('#modalChip').style.background=`linear-gradient(180deg,${c.a},${c.b})`;
+  $('#modalText').textContent=node.wish.text;
+  modal.classList.add('show');
+}
+$('#modalClose').addEventListener('click',()=>modal.classList.remove('show'));
+modal.addEventListener('click',e=>{ if(e.target===modal) modal.classList.remove('show'); });
+$('#modalRemove').addEventListener('click',()=>{
+  const node=tanzakuNodes.get(modalWishId);
+  if(node){
+    node.g.remove();
+    swayItems=swayItems.filter(s=>s.g!==node.wrap);
+    tanzakuNodes.delete(modalWishId);
+    wishes=wishes.filter(w=>w.id!==modalWishId);
+    save(); updateCount();
+  }
+  modal.classList.remove('show');
+  if(!wishes.length) showPanel();
+});
+
+/* ---------- 祈り ---------- */
+const prayMsg=$('#prayMsg');
+let praying=false;
+
+function screenPosOf(g){
+  const r=g.getBoundingClientRect();
+  return {x:r.left+r.width/2, y:r.top+r.height/2};
+}
+
+async function pray(){
+  if(praying||!wishes.length) return;
+  praying=true;
+  $('#prayBtn').disabled=true;
+  fabs.classList.add('hidden');
+
+  prayMsg.textContent='そっと 目を閉じて…';
+  prayMsg.classList.add('show');
+  await wait(1800);
+  prayMsg.classList.remove('show');
+  await wait(900);
+
+  // 短冊が順にきらめき、光の粒が夜空へ
+  const nodes=[...tanzakuNodes.values()];
+  nodes.forEach((node,i)=>{
+    setTimeout(()=>{
+      node.g.classList.add('praying');
+      const p=screenPosOf(node.g);
+      const col=COLORS[node.wish.color]||COLORS.red;
+      sky.spawnPrayerBurst(p.x,p.y,col.a,34);
+      setTimeout(()=>sky.spawnPrayerBurst(p.x,p.y-40,col.a,20),550);
+      setTimeout(()=>sky.spawnPrayerBurst(p.x,p.y-90,col.a,14),1200);
+      setTimeout(()=>node.g.classList.remove('praying'),3300);
+    }, i*260 + rand(0,120));
+  });
+
+  const total=nodes.length*260+3400;
+  // 願いの星が生まれる
+  setTimeout(()=>{
+    nodes.forEach((node,i)=>setTimeout(()=>sky.addWishStar(node.wish.color),i*180));
+  }, Math.min(total*.55, 2600));
+
+  await wait(Math.min(total,6500));
+  prayMsg.textContent='願いごとが 夜空に届きました ✨';
+  prayMsg.classList.add('show');
+  await wait(2600);
+  prayMsg.classList.remove('show');
+  await wait(800);
+
+  fabs.classList.remove('hidden');
+  $('#prayBtn').disabled=false;
+  praying=false;
+}
+$('#prayBtn').addEventListener('click',pray);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ================= メインループ ================= */
+const sky=new Sky($('#sky'));
+
+function rebuild(){
+  sky.resize();
+  buildScene();
+  for(const w of wishes) hangTanzaku(w,false);
+  updateCount();
+}
+
+let lastT=performance.now()/1000;
+function frame(){
+  const t=performance.now()/1000;
+  const dt=Math.min(.05,t-lastT);
+  lastT=t;
+
+  // そよ風（ゆっくり強弱が変わる）
+  const wind=.65 + .35*(Math.sin(t*.17)*.6+Math.sin(t*.43)*.4);
+
+  for(const s of swayItems){
+    let a;
+    if(s.kind==='culm')       a=s.amp*wind*Math.sin(t*s.sp+s.ph);
+    else if(s.kind==='branch')a=s.amp*wind*Math.sin(t*s.sp+s.ph);
+    else if(s.kind==='leaf')  a=s.amp*(.5+wind*.5)*Math.sin(t*s.sp+s.ph);
+    else                      a=s.amp*wind*Math.sin(t*s.sp+s.ph); // tanzaku
+    s.g.setAttribute('transform',`rotate(${a.toFixed(2)} ${s.cx} ${s.cy})`);
+  }
+
+  sky.update(dt,t);
+  sky.draw(t);
+  requestAnimationFrame(frame);
+}
+
+let resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(rebuild,250);
+});
+
+load();
+rebuild();
+if(wishes.length) showFabs(); else showPanel();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
