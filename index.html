@@ -168,6 +168,11 @@
   #qrCard button.primary{
     border-color:rgba(255,217,138,.55);color:#ffe9b8;
   }
+  #qrNewRoom{
+    display:block;margin:16px auto 0;background:none;border:none;
+    color:rgba(243,236,217,.6);font-size:12px;letter-spacing:.05em;
+    text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px;
+  }
 
   /* ---------- 祈りメッセージ ---------- */
   #prayMsg{
@@ -265,11 +270,12 @@
     <h3>いっしょに飾ろう</h3>
     <div id="qrBox"></div>
     <p id="qrUrl"></p>
-    <p class="qrHint">QRを読み取るか、リンクを送ると<br>同じ笹にみんなで短冊を飾れます</p>
+    <p class="qrHint">QRを読み取るか、リンクを送ると<br>同じ笹にみんなで短冊を飾れます<br>（同じQR・リンクを渡した人は全員同じ笹に入ります）</p>
     <div class="row">
       <button id="qrCopy" class="primary">リンクをコピー</button>
       <button id="qrClose">閉じる</button>
     </div>
+    <button id="qrNewRoom">＋ 別グループ用に新しい部屋を作る</button>
   </div>
 </div>
 
@@ -3428,6 +3434,23 @@ $('#qrCopy').addEventListener('click',async()=>{
     btn.textContent='長押しでコピーしてね';
   }
   setTimeout(()=>btn.textContent='リンクをコピー',1800);
+});
+
+function leaveCurrentRoom(){
+  stopSync();
+  for(const id of [...tanzakuNodes.keys()]) removeTanzakuLocal(id);
+  roomId=null; roomState=null; prayInited=false; lastPrayTs=0;
+  history.replaceState(null,'',location.pathname+location.search);
+  load();
+  for(const w of wishes) hangTanzaku(w,false);
+  updateCount();
+}
+$('#qrNewRoom').addEventListener('click',async()=>{
+  const ok=confirm('今の部屋から抜けて、別の新しい部屋を作りますか？\n（今の部屋の短冊はそのまま残り、あとで元のリンクから入れます）');
+  if(!ok) return;
+  leaveCurrentRoom();
+  const created=await createRoom();
+  if(created) showQr();
 });
 
 /* ================= メインループ ================= */
