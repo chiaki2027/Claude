@@ -14,7 +14,7 @@
     --momo: #D9536F;
     --momo-deep: #B93A55;
     --momo-soft: #FBE9ED;
-    --stamp: #C9425E;
+    --star: #C9902E;
 
     --cat-kyomu: #4A6FA5;
     --cat-kyomu-soft: #EAF0F8;
@@ -42,7 +42,7 @@
       --momo: #F08CA0;
       --momo-deep: #F4A5B5;
       --momo-soft: #43303A;
-      --stamp: #F08CA0;
+      --star: #E0B25E;
 
       --cat-kyomu: #8FB0DC;
       --cat-kyomu-soft: #2C3542;
@@ -67,7 +67,7 @@
     --momo: #F08CA0;
     --momo-deep: #F4A5B5;
     --momo-soft: #43303A;
-    --stamp: #F08CA0;
+    --star: #E0B25E;
     --cat-kyomu: #8FB0DC;
     --cat-kyomu-soft: #2C3542;
     --cat-jugyo: #85BD8D;
@@ -89,7 +89,7 @@
     --momo: #D9536F;
     --momo-deep: #B93A55;
     --momo-soft: #FBE9ED;
-    --stamp: #C9425E;
+    --star: #C9902E;
     --cat-kyomu: #4A6FA5;
     --cat-kyomu-soft: #EAF0F8;
     --cat-jugyo: #4E8A57;
@@ -163,48 +163,30 @@
     max-width: 34em;
   }
 
-  /* 進捗リング */
-  .progress-box {
+  /* 新着のお知らせボックス */
+  .stat-box {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 20px;
+    padding: 16px 22px;
     background: var(--momo-soft);
     border-radius: 16px;
   }
-
-  .ring { width: 76px; height: 76px; flex-shrink: 0; }
-  .ring svg { display: block; transform: rotate(-90deg); }
-  .ring .track { stroke: var(--line); }
-  .ring .bar {
-    stroke: var(--momo);
-    stroke-linecap: round;
-    transition: stroke-dashoffset 0.6s ease;
-  }
-  .ring-label {
-    position: relative;
-  }
-  .ring-num {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .stat-num {
     font-family: var(--font-display);
+    font-size: 34px;
     font-weight: 800;
-    font-size: 17px;
-    font-variant-numeric: tabular-nums;
-    transform: none;
-  }
-
-  .progress-text .count {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 16px;
+    line-height: 1;
+    color: var(--momo);
     font-variant-numeric: tabular-nums;
   }
-  .progress-text .cheer {
-    font-size: 13px;
+  .stat-text .stat-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .stat-text .stat-sub {
+    font-size: 12px;
     color: var(--ink-soft);
     margin-top: 2px;
   }
@@ -212,10 +194,25 @@
   /* ---------- ツールバー ---------- */
   .toolbar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
     margin: 24px 0 20px;
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    width: 52px;
+    flex-shrink: 0;
   }
 
   .chips {
@@ -251,6 +248,8 @@
     border-radius: 50%;
     background: var(--dot, var(--ink-soft));
   }
+  .chip .star { color: var(--star); }
+  .chip[aria-pressed="true"] .star { color: inherit; }
   .chip .n {
     font-variant-numeric: tabular-nums;
     opacity: 0.65;
@@ -260,6 +259,7 @@
   .search {
     flex: 0 1 240px;
     min-width: 180px;
+    margin-left: auto;
     position: relative;
   }
   .search input {
@@ -293,7 +293,6 @@
   }
 
   .card {
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -308,6 +307,10 @@
     box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
   }
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .card:hover { transform: none; }
+  }
 
   .card-meta {
     display: flex;
@@ -315,7 +318,6 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  .card.is-done .card-meta { padding-right: 56px; }
 
   .cat-chip {
     display: inline-flex;
@@ -345,8 +347,18 @@
     padding: 1px 8px;
   }
 
-  .duration {
+  .card-side {
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stars {
+    color: var(--star);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+  }
+  .duration {
     font-size: 12px;
     color: var(--ink-soft);
     font-variant-numeric: tabular-nums;
@@ -390,7 +402,7 @@
     border: 1.5px solid transparent;
     transition: filter 0.15s, background 0.15s;
   }
-  .btn:focus-visible, .chip:focus-visible, .done-toggle:focus-visible {
+  .btn:focus-visible, .chip:focus-visible {
     outline: 2px solid var(--momo);
     outline-offset: 2px;
   }
@@ -411,73 +423,6 @@
   .btn-secondary:hover { border-color: var(--momo); color: var(--momo); }
 
   .btn svg { flex-shrink: 0; }
-
-  /* 実践済みトグル */
-  .card-foot {
-    border-top: 1px dashed var(--line);
-    padding-top: 10px;
-    margin-top: 2px;
-  }
-  .done-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: none;
-    font-family: var(--font-body);
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 6px;
-  }
-  .done-toggle .box {
-    width: 17px; height: 17px;
-    border: 1.5px solid var(--ink-soft);
-    border-radius: 5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .card.is-done .done-toggle { color: var(--momo); font-weight: 700; }
-  .card.is-done .done-toggle .box {
-    background: var(--momo);
-    border-color: var(--momo);
-    color: #fff;
-  }
-
-  /* 「済」スタンプ */
-  .stamp {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    width: 46px;
-    height: 46px;
-    border: 2.5px solid var(--stamp);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--stamp);
-    transform: rotate(-12deg);
-    opacity: 0.88;
-    pointer-events: none;
-    animation: stamp-in 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
-  }
-  @keyframes stamp-in {
-    from { transform: rotate(-12deg) scale(1.8); opacity: 0; }
-    to   { transform: rotate(-12deg) scale(1);   opacity: 0.88; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .stamp { animation: none; }
-    .card, .ring .bar { transition: none; }
-    .card:hover { transform: none; }
-  }
 
   /* 空の状態 */
   .empty {
@@ -510,35 +455,35 @@
       <h1>AI<span class="accent">まなびば</span></h1>
       <p class="lead">ももいろ先生と一緒に、教務も授業もAIでちょっとラクに、ちょっと楽しく。動画を見たら、実践結果をフォームから送ってくださいね。</p>
     </div>
-    <div class="progress-box">
-      <div class="ring ring-label">
-        <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true">
-          <circle class="track" cx="38" cy="38" r="32" fill="none" stroke-width="7"></circle>
-          <circle class="bar" id="ring-bar" cx="38" cy="38" r="32" fill="none" stroke-width="7"
-                  stroke-dasharray="201" stroke-dashoffset="201"></circle>
-        </svg>
-        <span class="ring-num" id="ring-num">0%</span>
-      </div>
-      <div class="progress-text">
-        <div class="count"><span id="done-count">0</span> / <span id="total-count">0</span> 完了</div>
-        <div class="cheer" id="cheer">気になるものから、まず1本どうぞ！</div>
+    <div class="stat-box">
+      <div class="stat-num" id="new-count">0</div>
+      <div class="stat-text">
+        <div class="stat-title">2週間以内の新着</div>
+        <div class="stat-sub">全<span id="total-count">0</span>本のコンテンツを公開中</div>
       </div>
     </div>
   </header>
 
   <nav class="toolbar" aria-label="コンテンツの絞り込み">
-    <div class="chips" id="chips"></div>
-    <div class="search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-      </svg>
-      <input type="search" id="search" placeholder="キーワードで探す" aria-label="キーワードで探す">
+    <div class="filter-row">
+      <span class="filter-label">タグ</span>
+      <div class="chips" id="cat-chips"></div>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        </svg>
+        <input type="search" id="search" placeholder="キーワードで探す" aria-label="キーワードで探す">
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">難易度</span>
+      <div class="chips" id="lvl-chips"></div>
     </div>
   </nav>
 
   <main class="grid" id="grid"></main>
 
-  <footer>AIまなびば ／ 進捗のチェックはこのブラウザにだけ保存されます</footer>
+  <footer>AIまなびば ／ 新しいコンテンツには2週間 NEW マークがつきます</footer>
 </div>
 
 <script>
@@ -547,15 +492,16 @@
 
    1件につき { ... } を1つ書きます。増やすときはコピーして追記。
 
-   id:          進捗保存に使うID。1つずつ違う文字にして、あとから変えない
+   id:          他とかぶらない文字なら何でもOK
    category:    "kyomu"(教務×AI動画) / "jugyo"(授業×AI動画) /
-                "blog"(社内ブログ) / "note"(note記事)
+                "blog"(iportal記事) / "note"(note記事)
    title:       タイトル
    description: ひとこと説明
+   level:       難易度。1 / 2 / 3 のどれか(星の数になります)
    duration:    動画の長さ(記事なら "" でOK)
    url:         動画 or 記事のURL
    formUrl:     実践報告のMicrosoft FormsのURL(動画のみ。記事は "" でOK)
-   date:        追加した日(14日以内は NEW バッジが付きます)
+   date:        追加した日。この日から2週間 NEW マークが自動でつきます
    ========================================================= */
 const CONTENTS = [
   // --- 教務に使えるAI活用動画(サンプル。URLを差し替えてください) ---
@@ -564,6 +510,7 @@ const CONTENTS = [
     category: "kyomu",
     title: "Copilotで保護者向けのお便りを時短作成",
     description: "文面のたたき台をAIに作ってもらい、確認と手直しだけで仕上げる流れを紹介します。",
+    level: 1,
     duration: "8分",
     url: "",
     formUrl: "",
@@ -574,6 +521,7 @@ const CONTENTS = [
     category: "kyomu",
     title: "アンケート集計をAIでまるっと自動化",
     description: "行事後アンケートの自由記述を、AIで分類・要約するテクニックです。",
+    level: 2,
     duration: "10分",
     url: "",
     formUrl: "",
@@ -586,6 +534,7 @@ const CONTENTS = [
     category: "jugyo",
     title: "授業スライドをAIと10分で作る",
     description: "単元名を伝えるだけで構成案からスライドまで。仕上げのコツも解説します。",
+    level: 1,
     duration: "12分",
     url: "",
     formUrl: "",
@@ -596,18 +545,20 @@ const CONTENTS = [
     category: "jugyo",
     title: "小テストと解説をAIで自動生成",
     description: "教科書の範囲を指定して、難易度別の小テストを作る方法です。",
+    level: 3,
     duration: "9分",
     url: "",
     formUrl: "",
     date: "2026-06-15",
   },
 
-  // --- 社内ブログの記事(サンプル。URLを差し替えてください) ---
+  // --- iportalの記事(サンプル。URLを差し替えてください) ---
   {
     id: "blog-01",
     category: "blog",
     title: "今月のAI活用事例まとめ",
     description: "校内で実際にあった活用事例を集めました。まずはマネから始めましょう。",
+    level: 1,
     duration: "",
     url: "",
     formUrl: "",
@@ -620,6 +571,7 @@ const CONTENTS = [
     category: "note",
     title: "AIと働く1日のリアルなスケジュール",
     description: "朝の準備から放課後まで、どこでAIを使っているかを正直に書きました。",
+    level: 1,
     duration: "",
     url: "",
     formUrl: "",
@@ -627,32 +579,23 @@ const CONTENTS = [
   },
 ];
 
-/* カテゴリの表示名と色(通常は編集不要) */
+/* タグの表示名と色(通常は編集不要) */
 const CATEGORIES = {
-  kyomu: { label: "教務×AI 動画",  cssVar: "--cat-kyomu" },
-  jugyo: { label: "授業×AI 動画",  cssVar: "--cat-jugyo" },
-  blog:  { label: "社内ブログ",     cssVar: "--cat-blog" },
-  note:  { label: "ももいろ先生のnote", cssVar: "--cat-note" },
+  kyomu: { label: "教務×AI 動画", cssVar: "--cat-kyomu" },
+  jugyo: { label: "授業×AI 動画", cssVar: "--cat-jugyo" },
+  blog:  { label: "iportal記事",  cssVar: "--cat-blog" },
+  note:  { label: "note記事",     cssVar: "--cat-note" },
 };
 
-/* ========== ここから下はアプリ本体(編集不要) ========== */
-const STORAGE_KEY = "manabiba-done-v1";
+/* NEWマークを表示する日数 */
 const NEW_DAYS = 14;
 
-let doneSet = new Set();
-try {
-  doneSet = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
-} catch (e) { /* Teams内などで保存が使えない環境ではチェックは保持されません */ }
-
-let currentFilter = "all";
+/* ========== ここから下はアプリ本体(編集不要) ========== */
+let currentCat = "all";
+let currentLevel = 0; // 0 = すべて
 let currentQuery = "";
 
 const grid = document.getElementById("grid");
-const chipsEl = document.getElementById("chips");
-
-function saveDone() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...doneSet])); } catch (e) {}
-}
 
 function isVideo(item) { return item.category === "kyomu" || item.category === "jugyo"; }
 
@@ -661,30 +604,58 @@ function isNew(item) {
   return (Date.now() - added.getTime()) / 86400000 <= NEW_DAYS;
 }
 
+function starText(level) { return "★".repeat(level); }
+
 function catColor(cat, soft) {
   return `var(${CATEGORIES[cat].cssVar}${soft ? "-soft" : ""})`;
 }
 
-function renderChips() {
-  const counts = { all: CONTENTS.length };
+function makeChip({ pressed, dotVar, star, label, count, onClick }) {
+  const btn = document.createElement("button");
+  btn.className = "chip";
+  btn.type = "button";
+  btn.setAttribute("aria-pressed", String(pressed));
+  if (dotVar) btn.style.setProperty("--dot", `var(${dotVar})`);
+  btn.innerHTML =
+    (dotVar ? '<span class="dot"></span>' : "") +
+    (star ? `<span class="star">${star}</span>` : "") +
+    `<span>${label}</span>` +
+    (count != null ? `<span class="n">${count}</span>` : "");
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
+function renderCatChips() {
+  const el = document.getElementById("cat-chips");
+  const counts = {};
   for (const item of CONTENTS) counts[item.category] = (counts[item.category] || 0) + 1;
 
-  const defs = [["all", "すべて", null], ...Object.entries(CATEGORIES).map(([k, v]) => [k, v.label, v.cssVar])];
-  chipsEl.innerHTML = "";
-  for (const [key, label, cssVar] of defs) {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.type = "button";
-    btn.setAttribute("aria-pressed", String(key === currentFilter));
-    if (cssVar) btn.style.setProperty("--dot", `var(${cssVar})`);
-    btn.innerHTML = (cssVar ? `<span class="dot"></span>` : "") +
-      `<span>${label}</span><span class="n">${counts[key] || 0}</span>`;
-    btn.addEventListener("click", () => {
-      currentFilter = key;
-      renderChips();
-      renderGrid();
-    });
-    chipsEl.appendChild(btn);
+  el.innerHTML = "";
+  el.appendChild(makeChip({
+    pressed: currentCat === "all", label: "すべて", count: CONTENTS.length,
+    onClick: () => { currentCat = "all"; renderAll(); },
+  }));
+  for (const [key, cat] of Object.entries(CATEGORIES)) {
+    el.appendChild(makeChip({
+      pressed: currentCat === key, dotVar: cat.cssVar, label: cat.label, count: counts[key] || 0,
+      onClick: () => { currentCat = key; renderAll(); },
+    }));
+  }
+}
+
+function renderLevelChips() {
+  const el = document.getElementById("lvl-chips");
+  el.innerHTML = "";
+  el.appendChild(makeChip({
+    pressed: currentLevel === 0, label: "すべて",
+    onClick: () => { currentLevel = 0; renderAll(); },
+  }));
+  for (const lv of [1, 2, 3]) {
+    const count = CONTENTS.filter((c) => c.level === lv).length;
+    el.appendChild(makeChip({
+      pressed: currentLevel === lv, star: starText(lv), label: `難易度${lv}`, count,
+      onClick: () => { currentLevel = lv; renderAll(); },
+    }));
   }
 }
 
@@ -705,7 +676,8 @@ const ICON_BOOK = '<path d="M4 4h7v16H4zM13 4h7v16h-7z" fill="none" stroke="curr
 function renderGrid() {
   const q = currentQuery.trim().toLowerCase();
   const items = CONTENTS.filter((item) => {
-    if (currentFilter !== "all" && item.category !== currentFilter) return false;
+    if (currentCat !== "all" && item.category !== currentCat) return false;
+    if (currentLevel !== 0 && item.level !== currentLevel) return false;
     if (q && !(item.title + item.description).toLowerCase().includes(q)) return false;
     return true;
   });
@@ -713,16 +685,14 @@ function renderGrid() {
   grid.innerHTML = "";
 
   if (items.length === 0) {
-    grid.innerHTML = `<div class="empty">見つかりませんでした。キーワードやカテゴリを変えてみてください。</div>`;
+    grid.innerHTML = `<div class="empty">見つかりませんでした。キーワードや絞り込みを変えてみてください。</div>`;
     return;
   }
 
   for (const item of items) {
-    const done = doneSet.has(item.id);
     const video = isVideo(item);
     const card = document.createElement("article");
-    card.className = "card" + (done ? " is-done" : "");
-    card.dataset.id = item.id;
+    card.className = "card";
 
     const buttons = video
       ? actionButton(item.url, true, ICON_PLAY, "動画を見る") +
@@ -730,60 +700,36 @@ function renderGrid() {
       : actionButton(item.url, true, ICON_BOOK, "記事を読む");
 
     card.innerHTML = `
-      ${done ? '<span class="stamp" aria-hidden="true">済</span>' : ""}
       <div class="card-meta">
         <span class="cat-chip" style="--chip-bg:${catColor(item.category, true)};--chip-fg:${catColor(item.category)}">
           <span class="dot"></span>${CATEGORIES[item.category].label}
         </span>
         ${isNew(item) ? '<span class="badge-new">NEW</span>' : ""}
-        ${item.duration ? `<span class="duration">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2" stroke-linecap="round"></path>
-          </svg>${item.duration}</span>` : ""}
+        <span class="card-side">
+          <span class="stars" aria-label="難易度${item.level}" title="難易度${item.level}">${starText(item.level)}</span>
+          ${item.duration ? `<span class="duration">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2" stroke-linecap="round"></path>
+            </svg>${item.duration}</span>` : ""}
+        </span>
       </div>
       <h3>${item.title}</h3>
       <p class="desc">${item.description}</p>
-      <div class="card-actions">${buttons}</div>
-      <div class="card-foot">
-        <button class="done-toggle" type="button" aria-pressed="${done}">
-          <span class="box" aria-hidden="true">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
-          </span>
-          ${video ? (done ? "実践しました！" : "実践したらチェック") : (done ? "読みました！" : "読んだらチェック")}
-        </button>
-      </div>`;
-
-    card.querySelector(".done-toggle").addEventListener("click", () => {
-      if (doneSet.has(item.id)) doneSet.delete(item.id);
-      else doneSet.add(item.id);
-      saveDone();
-      renderGrid();
-      renderProgress();
-    });
+      <div class="card-actions">${buttons}</div>`;
 
     grid.appendChild(card);
   }
 }
 
-function renderProgress() {
-  const total = CONTENTS.length;
-  const done = CONTENTS.filter((c) => doneSet.has(c.id)).length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
+function renderStats() {
+  document.getElementById("total-count").textContent = CONTENTS.length;
+  document.getElementById("new-count").textContent = CONTENTS.filter(isNew).length;
+}
 
-  document.getElementById("done-count").textContent = done;
-  document.getElementById("total-count").textContent = total;
-  document.getElementById("ring-num").textContent = pct + "%";
-
-  const circumference = 2 * Math.PI * 32;
-  const bar = document.getElementById("ring-bar");
-  bar.setAttribute("stroke-dasharray", circumference);
-  bar.setAttribute("stroke-dashoffset", circumference * (1 - pct / 100));
-
-  const cheer = document.getElementById("cheer");
-  if (pct === 0) cheer.textContent = "気になるものから、まず1本どうぞ！";
-  else if (pct < 50) cheer.textContent = "いい調子です！この調子でいきましょう";
-  else if (pct < 100) cheer.textContent = "半分超えました！あと少しです";
-  else cheer.textContent = "全部完了！すばらしいです 🎉";
+function renderAll() {
+  renderCatChips();
+  renderLevelChips();
+  renderGrid();
 }
 
 document.getElementById("search").addEventListener("input", (e) => {
@@ -791,9 +737,8 @@ document.getElementById("search").addEventListener("input", (e) => {
   renderGrid();
 });
 
-renderChips();
-renderGrid();
-renderProgress();
+renderAll();
+renderStats();
 </script>
 </body>
 </html>
